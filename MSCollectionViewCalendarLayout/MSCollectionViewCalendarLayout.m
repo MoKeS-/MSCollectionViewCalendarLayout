@@ -858,8 +858,14 @@ NSUInteger const MSCollectionMinBackgroundZ = 0.0;
 
 - (void)scrollCollectionViewToClosetSectionToCurrentTimeAnimated:(BOOL)animated
 {
+    NSDate *currentDate = [[self.delegate currentTimeComponentsForCollectionView:self.collectionView layout:self] beginningOfDay];
+    [self scrollCollectionViewToClosestSection:currentDate andAnimated:animated];
+}
+
+- (void)scrollCollectionViewToClosestSection:(NSDate *)date andAnimated:(BOOL)animated
+{
     if (self.collectionView.numberOfSections != 0) {
-        NSInteger closestSectionToCurrentTime = [self closestSectionToCurrentTime];
+        NSInteger closestSectionToCurrentTime = [self closestSectionToTime:date];
         CGPoint contentOffset;
         CGRect currentTimeHorizontalGridlineattributesFrame = [self.currentTimeHorizontalGridlineAttributes[[NSIndexPath indexPathForItem:0 inSection:0]] frame];
         if (self.sectionLayoutType == MSSectionLayoutTypeHorizontalTile) {
@@ -897,16 +903,13 @@ NSUInteger const MSCollectionMinBackgroundZ = 0.0;
     }
 }
 
-- (NSInteger)closestSectionToCurrentTime
-{
-    NSDate *currentTime = [self.delegate currentTimeComponentsForCollectionView:self.collectionView layout:self];
-    NSDate *startOfCurrentDay = [[NSCalendar currentCalendar] startOfDayForDate:currentTime];
-
+- (NSInteger)closestSectionToTime:(NSDate *)date {
+    
     NSTimeInterval minTimeInterval = CGFLOAT_MAX;
     NSInteger closestSection = NSIntegerMax;
     for (NSInteger section = 0; section < self.collectionView.numberOfSections; section++) {
         NSDate *sectionDayDate = [self.delegate collectionView:self.collectionView layout:self dayForSection:section];
-        NSTimeInterval timeInterval = [startOfCurrentDay timeIntervalSinceDate:sectionDayDate];
+        NSTimeInterval timeInterval = [date timeIntervalSinceDate:sectionDayDate];
         if ((timeInterval <= 0) && ABS(timeInterval) < minTimeInterval) {
             minTimeInterval = ABS(timeInterval);
             closestSection = section;
@@ -914,7 +917,6 @@ NSUInteger const MSCollectionMinBackgroundZ = 0.0;
     }
     return ((closestSection != NSIntegerMax) ? closestSection : 0);
 }
-
 #pragma mark Section Sizing
 
 - (CGRect)rectForSection:(NSInteger)section
